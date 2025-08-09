@@ -368,7 +368,7 @@ const TocSection: React.FC<TocSectionProps> = ({ tocTree, selectedNodeId, onNode
 
 	return (
 		<nav aria-label="Table of Contents" className="flex flex-col relative w-full max-w-md h-full rounded-l-lg md:rounded-r-none rounded-r-lg bg-card overflow-hidden">
-			<div className="h-full px-4 py-2 overflow-hidden">
+			<div className="flex flex-col h-full px-4 py-2">
 				{exportMenuOpen && (
 					<div style={{ position: "absolute", left: -9999, top: -9999, pointerEvents: "none" }}>
 						<div ref={mindmapRef} style={{ background: "var(--background)", padding: 24, borderRadius: 12, minWidth: 900, minHeight: 600 }}>
@@ -376,7 +376,7 @@ const TocSection: React.FC<TocSectionProps> = ({ tocTree, selectedNodeId, onNode
 						</div>
 					</div>
 				)}
-				<div className="flex items-center justify-between">
+				<div className="flex items-center justify-between flex-shrink-0">
 					<h2 className="text-xl font-semibold capitalize">{tocTree?.label || "Table of Contents"}</h2>
 					<DropdownMenu open={exportMenuOpen} onOpenChange={setExportMenuOpen}>
 						<DropdownMenuTrigger asChild>
@@ -394,10 +394,10 @@ const TocSection: React.FC<TocSectionProps> = ({ tocTree, selectedNodeId, onNode
 						<input type="file" accept="application/json" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
 					</DropdownMenu>
 				</div>
-				<div className="mb-2">
+				<div className="mb-2 flex-shrink-0">
 					<Input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search topics..." />
 				</div>
-				<ul className="list-none overflow-y-auto overflow-x-clip max-h-full hide-scrollbar">{filteredTocTree && renderNode(filteredTocTree)}</ul>
+				<ul className="list-none overflow-y-auto overflow-x-clip flex-1 hide-scrollbar">{filteredTocTree && renderNode(filteredTocTree)}</ul>
 			</div>
 		</nav>
 	);

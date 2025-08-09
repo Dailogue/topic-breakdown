@@ -460,6 +460,51 @@ const MainContainer: React.FC<MainContainerProps> = ({
 		[]
 	);
 
+	const expandPathToNode = useCallback(
+		(tree: TocNode | null, targetNodeId: string): TocNode | null => {
+			if (!tree) return null;
+			
+			// If this is the target node, return it as-is
+			if (tree.id === targetNodeId) {
+				return tree;
+			}
+			
+			// Check if the target node is in any of the children's subtrees
+			let hasTargetInSubtree = false;
+			const updatedChildren = tree.children?.map((child) => {
+				const updatedChild = expandPathToNode(child, targetNodeId);
+				if (updatedChild && hasTargetNodeInSubtree(updatedChild, targetNodeId)) {
+					hasTargetInSubtree = true;
+				}
+				return updatedChild || child; // Return original child if null
+			});
+			
+			// If target is in subtree, expand this node
+			if (hasTargetInSubtree) {
+				return {
+					...tree,
+					isExpanded: true,
+					children: updatedChildren,
+				};
+			}
+			
+			return {
+				...tree,
+				children: updatedChildren,
+			};
+		},
+		[]
+	);
+
+	const hasTargetNodeInSubtree = useCallback(
+		(tree: TocNode | null, targetNodeId: string): boolean => {
+			if (!tree) return false;
+			if (tree.id === targetNodeId) return true;
+			return tree.children?.some((child) => hasTargetNodeInSubtree(child, targetNodeId)) || false;
+		},
+		[]
+	);
+
 	const handleNodeSelect = async (node: TocNode) => {
 		setSelectedNode(node);
 		if (isMobile) setIsChatModalOpen(true);
@@ -480,15 +525,21 @@ const MainContainer: React.FC<MainContainerProps> = ({
 			);
 		setMessages(nodeMessages);
 
-		// Mark node as read in tocTree
-		setTocTree((prev) =>
-			prev
-				? (function markRead(n: TocNode): TocNode {
-						if (n.id === node.id) return { ...n, isRead: true };
-						return { ...n, children: n.children?.map(markRead) };
-				  })(prev)
-				: prev
-		);
+		// Expand path to the selected node and mark node as read
+		setTocTree((prev) => {
+			if (!prev) return prev;
+			
+			// First expand the path to the selected node
+			const expandedTree = expandPathToNode(prev, node.id);
+			
+			// Then mark the node as read
+			const markRead = (n: TocNode): TocNode => {
+				if (n.id === node.id) return { ...n, isRead: true };
+				return { ...n, children: n.children?.map(markRead) };
+			};
+			
+			return expandedTree ? markRead(expandedTree) : prev;
+		});
 
 		setTocTree((prev) => updateNodeMessages(prev, node.id, nodeMessages));
 

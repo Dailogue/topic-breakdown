@@ -1,0 +1,7 @@
+# Ignore all files and folders ending with -local or -local.* for eslint
+*-local/
+*-local.*
+**/*-local/
+**/*-local.*
+node_modules/
+dist/

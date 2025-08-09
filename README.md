@@ -2,7 +2,7 @@
 
 Topic Breakdown is a web application that helps users break down complex topics into fundamental subtopics for better understanding. The application uses LLMs to generate subtopics and additional information based on user input.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsahajsk21%2Ftopic-breakdown&env=OPENAI_API_KEY&envDescription=OPENAI%20API%20key&envLink=https%3A%2F%2Fopenai.com%2Fapi%2F&project-name=topic-breakdown&repository-name=topic-breakdown)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsahajsk21%2Ftopic-breakdown&env=GEMINI_API_KEY&envDescription=Gemini%20API%20key&envLink=https%3A%2F%2Fai.google.dev%2F&project-name=topic-breakdown&repository-name=topic-breakdown)
 
 ## Getting Started
 
@@ -20,9 +20,10 @@ npm install
 ```
 
 Create a .env.local file in the root directory and add your environment variables:
+Get your Gemini API key at https://aistudio.google.com/apikey.
     
 ```bash
-OPENAI_API_KEY=<your-openai-api-key>
+GEMINI_API_KEY=<your-gemini-api-key>
 ```
 
 Finally, start the development server:

@@ -1,0 +1,5 @@
+# Ignore all files and folders ending with -local or -local.* for build
+*-local/
+*-local.*
+**/*-local/
+**/*-local.*

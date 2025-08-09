@@ -1,51 +1,47 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const client = new OpenAI({
-	apiKey: process.env["OPENAI_API_KEY"],
-});
+import { fetchWithRetry } from "@/lib/utils";
 
 export async function POST(req: Request) {
-	const { topic } = await req.json();
-	console.log("topic: ", topic);
 	try {
-		const data = await client.chat.completions.create({
-			model: "gpt-4o",
-			messages: [
-				{
-					role: "system",
-					content: `# Goal
-For a given topic return a roadmap that can be used to learn about the topic.
+		// Read raw body and forward to Gemini
+		const rawBody = await req.text();
 
-# Response structure:
-- JSON format
-- Include two fields: "roadmap" (list) and "information" (string)
-- Do not add json markdown
-
-# Guidelines:
-- The subtopics list should go from advanced to beginner 
-- The subtopics should build upon the previous subtopics
-
-# Example:
-
-## Example 1:
-- Input: "Fractions"
-Response: 
-{
-  "roadmap": ["Math Operations", "Numbers"],
-  "information": "Fractions are a way to represent parts of a whole."
-	}`,
+		const response = await fetchWithRetry(
+			"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
 				},
-				{ role: "user", content: topic },
-			],
-		});
+				body: rawBody,
+			},
+			3,
+			500
+		);
 
-		console.log("data: ", data);
-		const content = data.choices[0].message.content;
-		const gptResponse = content ? JSON.parse(content) : "";
-		return NextResponse.json(gptResponse);
+		if (!response.body) {
+			const status = response.status || 502;
+			const message = await response
+				.text()
+				.catch(() => "Failed to process request");
+			return NextResponse.json({ message }, { status });
+		}
+
+		// Relay raw SSE body to client
+		return new Response(response.body, {
+			status: response.status,
+			headers: {
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache, no-transform",
+				Connection: "keep-alive",
+			},
+		});
 	} catch (error) {
-		console.error("Error fetching subtopics: ", error);
-		return NextResponse.json({ message: "Failed to fetch subtopics" }, { status: 500 });
+		console.error("Roadmap API error:", error);
+		return NextResponse.json(
+			{ message: "An unexpected error occurred" },
+			{ status: 500 }
+		);
 	}
 }

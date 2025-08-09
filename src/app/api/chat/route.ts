@@ -1,30 +1,47 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const client = new OpenAI({
-	apiKey: process.env["OPENAI_API_KEY"],
-});
+import { fetchWithRetry } from "@/lib/utils";
 
 export async function POST(req: Request) {
-	const { messages } = await req.json();
-	const systemPrompt = `# Goal
-To respond to a user's messages with relevant information.
-
-# Guidelines:
-- Be concise and informative.
-- Return markdown formatted text.
-- Enclose mathematical formulas in dollar signs.
-`;
 	try {
-		const data = await client.chat.completions.create({
-			model: "gpt-4o",
-			messages: [{ role: "system", content: systemPrompt }, ...messages],
-		});
+		// Read the raw body and forward it directly to Gemini
+		const rawBody = await req.text();
 
-		console.log("data: ", data);
-		return NextResponse.json(data.choices[0].message.content);
-	} catch (error) {
-		console.error("Error fetching subtopics: ", error);
-		return NextResponse.json({ message: "Failed to fetch subtopics" }, { status: 500 });
+		const response = await fetchWithRetry(
+			"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
+				},
+				body: rawBody,
+			},
+			3,
+			500
+		);
+
+		if (!response.body) {
+			const status = response.status || 502;
+			const message = await response
+				.text()
+				.catch(() => "Failed to get response from AI service");
+			return NextResponse.json({ message }, { status });
+		}
+
+		// Relay raw SSE back to the client
+		return new Response(response.body, {
+			status: response.status,
+			headers: {
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache, no-transform",
+				Connection: "keep-alive",
+			},
+		});
+	} catch (e) {
+		console.error("Chat API error:", e);
+		return NextResponse.json(
+			{ message: "An unexpected error occurred" },
+			{ status: 500 }
+		);
 	}
 }
